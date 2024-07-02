@@ -305,7 +305,11 @@ const DatabaseChat = ({
           className={styles.button}
           disabled={inputDisabled}
         >
-          Send
+          {inputDisabled ? (
+            <CircularProgress size={24} />
+          ) : (
+            <span>Ask</span>
+          )}
         </button>
       </form>
     </div>
