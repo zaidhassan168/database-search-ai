@@ -72,6 +72,7 @@ const DatabaseChat = ({
   const [threadId, setThreadId] = useState("");
   const [response, setResponse] = useState<ApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [agentName, setAgentName] = useState("");
   const openai = new OpenAI({
     apiKey: "dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b",
     dangerouslyAllowBrowser: true,
@@ -153,7 +154,6 @@ const DatabaseChat = ({
           content: text,
         },
       ],
-      stream: true,
     };
 
     try {
@@ -169,55 +169,18 @@ const DatabaseChat = ({
         throw new Error(`Error fetching data: ${response.statusText}`);
       }
 
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.trim() === '') continue;
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') {
-                // Stream completed
-                setInputDisabled(false);
-                return;
-              }
-              try {
-                const parsed = JSON.parse(data);
-                handleStreamEvent(parsed);
-              } catch (e) {
-                console.error('Error parsing stream data:', e);
-              }
-            }
-          }
-        }
-      }
-    } catch (err) {
-      setError(err.message);
+      const data = await response.json();
+      console.log(data);
+      const message = data.choices[0].message.content;
+      // Process the data as needed
+    // const message = data.message
+    appendMessage( "assistant", message );
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
       setInputDisabled(false);
     }
   };
-
-  const handleStreamEvent = (event) => {
-    switch (event.choices[0].delta.role) {
-      case 'assistant':
-        handleTextDelta({ value: event.choices[0].delta.content });
-        break;
-      // Add other cases as needed
-    }
-  };
-
-
-
 
   const submitActionResult = async (runId, toolCallOutputs) => {
     const response = await fetch(

@@ -1,5 +1,45 @@
-// pages/api/proxy.ts
-// app/api/proxy/route.ts
+
+// import { NextResponse } from 'next/server';
+// import OpenAI from 'openai';
+
+// const openai = new OpenAI({
+//   apiKey: 'dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b',
+//   baseURL: 'https://llm.mdb.ai'
+// });
+
+// export async function POST(request: Request) {
+//   try {
+//     // Parse the incoming request body
+//     const requestData = await request.json();
+
+//     // Create a chat completion using the SDK-like structure
+//     const completion = await openai.chat.completions.create({
+//       messages: requestData.messages,
+//       model: requestData.model || 'gpt-3.5-turbo',
+//       stream:false,
+//     });
+//     console.log(completion.choices);
+//     // const completion = await openai.chat.completions.create({
+//     //   messages: requestData.messages,
+//     //   model: "driver_mind",
+//     //   stream: false,
+//     // });
+//     // console.log(completion);
+//     // return NextResponse.json(completion);
+//     //return toreadablestream
+//     // if stream: true, then print chunks, as below
+//     // for await (const chunk of completion) {
+//     //   console.log(chunk.choices[0].delta.content);
+//     //   return new Response(completion.toReadableStream());
+//     // }
+//     // return new Response(completion.toReadableStream());
+//    // return new Response(completion.data.choices[0].text);
+//    const data = await completion;
+//    return NextResponse.json(data.choices[0].message.content);
+//   } catch (error) {
+//     return NextResponse.json({ error: error.message }, { status: 500 });
+//   }
+// }
 
 import { NextResponse } from 'next/server';
 
@@ -26,6 +66,7 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
+    console.log(data.choices[0].message.content);
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -36,35 +77,3 @@ export async function POST(request: Request) {
 
 
 
-
-
-// import type { NextApiRequest, NextApiResponse } from 'next';
-
-// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-//   const { method, body } = req;
-
-//   if (method !== 'POST') {
-//     res.setHeader('Allow', ['POST']);
-//     res.status(405).end(`Method ${method} Not Allowed`);
-//     return;
-//   }
-
-//   const apiUrl = 'https://llm.mdb.ai/chat/completions'; // The third-party API URL
-
-//   const requestOptions: RequestInit = {
-//     method,
-//     headers: {
-//       'Content-Type': 'application/json',
-//       'Authorization': 'Bearer dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b', // Replace with your actual API key
-//     },
-//     body: JSON.stringify(body),
-//   };
-
-//   try {
-//     const response = await fetch(apiUrl, requestOptions);
-//     const data = await response.json();
-//     res.status(response.status).json(data);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to fetch data from third-party API' });
-//   }
-// }

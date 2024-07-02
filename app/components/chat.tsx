@@ -114,7 +114,9 @@ const Chat = ({
         }),
       }
     );
+    console.log('bodu', response.body);
     const stream = AssistantStream.fromReadableStream(response.body);
+    console.log(stream);
     handleReadableStream(stream);
   };
 
@@ -245,7 +247,7 @@ const Chat = ({
       })
       return [...prevMessages.slice(0, -1), updatedLastMessage];
     });
-    
+
   }
 
   return (

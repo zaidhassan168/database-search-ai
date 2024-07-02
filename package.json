@@ -9,16 +9,30 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/cache": "^11.11.0",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mantine/core": "^7.11.0",
+    "@mantine/hooks": "^7.11.0",
+    "@mui/material-nextjs": "^5.15.11",
+    "@nextui-org/button": "^2.0.34",
+    "@nextui-org/system": "^2.2.2",
+    "@nextui-org/theme": "^2.2.6",
     "axios": "^1.7.2",
+    "framer-motion": "^11.2.12",
     "next": "14.1.4",
     "openai": "^4.46.0",
     "react": "^18",
     "react-dom": "^18",
-    "react-markdown": "^9.0.1"
+    "react-markdown": "^9.0.1",
+    "readable-stream": "^4.5.2"
   },
   "devDependencies": {
     "@types/node": "20.12.7",
     "@types/react": "18.2.79",
+    "postcss": "^8.4.39",
+    "postcss-preset-mantine": "^1.15.0",
+    "postcss-simple-vars": "^7.0.1",
     "typescript": "5.4.5"
   },
   "prettier": {
