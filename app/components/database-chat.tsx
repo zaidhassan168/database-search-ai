@@ -1,6 +1,5 @@
 "use client";
 import OpenAI from "openai";
-import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./chat.module.css";
 import { AssistantStream } from "openai/lib/AssistantStream";
@@ -8,6 +7,16 @@ import Markdown from "react-markdown";
 // @ts-expect-error - no types for this yet
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
+import {
+  Box,
+  Button,
+  TextField,
+  CircularProgress,
+  Typography,
+  Paper,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 type MessageProps = {
   role: "user" | "assistant" | "code";
   text: string;
@@ -88,62 +97,13 @@ const DatabaseChat = ({
   }, [messages]);
 
   // create a new threadID when chat component created
-  useEffect(() => {
-
-    const createThread = async () => {
-      const res = await fetch(`/api/assistants/threads`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      setThreadId(data.threadId);
-    };
-    createThread();
-  }, []);
-
-
-  // const sendMessage = async (text: string) => {
-
-  //   const requestData = {
-  //     model: 'driver_mind',
-  //     messages: [
-  //       {
-  //         role: 'system',
-  //         content: 'analyse the data',
-  //       },
-  //       {
-  //         role: 'user',
-  //         content: text,
-  //       },
-  //     ],
-  //     stream: true,
-  //   };
-  //   try {
-  //     const response = await fetch('/api/proxy', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(requestData),
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error(`Error fetching data: ${response.statusText}`);
-  //     }
-
-  //     const responseData = await response.json();
-  //     // console.log(responseData);
-  //     console.log(responseData.choices[0].message.content);
-  //     const stream = AssistantStream.fromReadableStream(response.body);
-  //     handleReadableStream(stream);
-  //     setInputDisabled(false);
-
-  //     // setData(responseData);
-  //   } catch (err) {
-  //     setError(err.message);
-  //   }
-  // };
+  const setAssistantName = (agentName: string) => {
+    setAgentName(agentName);
+    console.log("agentName: ", agentName);
+  }
   const sendMessage = async (text: string) => {
     const requestData = {
-      model: 'driver_mind',
+      model: agentName || "gpt-3.5-turbo",
       messages: [
         {
           role: 'system',
@@ -173,31 +133,13 @@ const DatabaseChat = ({
       console.log(data);
       const message = data.choices[0].message.content;
       // Process the data as needed
-    // const message = data.message
-    appendMessage( "assistant", message );
+      // const message = data.message
+      appendMessage("assistant", message);
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
       setInputDisabled(false);
     }
-  };
-
-  const submitActionResult = async (runId, toolCallOutputs) => {
-    const response = await fetch(
-      `/api/assistants/threads/${threadId}/actions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          runId: runId,
-          toolCallOutputs: toolCallOutputs,
-        }),
-      }
-    );
-    const stream = AssistantStream.fromReadableStream(response.body);
-    handleReadableStream(stream);
   };
 
   const handleSubmit = (e) => {
@@ -262,7 +204,6 @@ const DatabaseChat = ({
       })
     );
     setInputDisabled(true);
-    submitActionResult(runId, toolCallOutputs);
   };
 
   // handleRunCompleted - re-enable the input form
@@ -332,6 +273,16 @@ const DatabaseChat = ({
 
   return (
     <div className={styles.chatContainer}>
+      <TextField
+        label="Agent Name"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        onChange={(e) =>
+          setAssistantName(e.target.value)
+        }
+        sx={{ marginBottom: 2 }}
+      />
       <div className={styles.messages}>
         {messages.map((msg, index) => (
           <Message key={index} role={msg.role} text={msg.text} />
