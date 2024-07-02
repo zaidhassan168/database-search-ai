@@ -1,5 +1,6 @@
 "use client";
-
+import OpenAI from "openai";
+import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./chat.module.css";
 import { AssistantStream } from "openai/lib/AssistantStream";
@@ -56,6 +57,12 @@ type ChatProps = {
   ) => Promise<string>;
 };
 
+interface ApiResponse {
+  // Define the expected structure of the API response
+  // Adjust these fields according to the actual response format
+  message: string;
+  [key: string]: any;
+}
 const DatabaseChat = ({
   functionCallHandler = () => Promise.resolve(""), // default to return empty string
 }: ChatProps) => {
@@ -63,7 +70,13 @@ const DatabaseChat = ({
   const [messages, setMessages] = useState([]);
   const [inputDisabled, setInputDisabled] = useState(false);
   const [threadId, setThreadId] = useState("");
-
+  const [response, setResponse] = useState<ApiResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const openai = new OpenAI({
+    apiKey: "dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b",
+    dangerouslyAllowBrowser: true,
+    baseURL: "https://llm.mdb.ai",
+  });
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollToBottom = () => {
@@ -75,6 +88,7 @@ const DatabaseChat = ({
 
   // create a new threadID when chat component created
   useEffect(() => {
+
     const createThread = async () => {
       const res = await fetch(`/api/assistants/threads`, {
         method: "POST",
@@ -85,14 +99,49 @@ const DatabaseChat = ({
     createThread();
   }, []);
 
-  const sendMessage = async (text) => {
-    const chat_url = 'https://llm.mdb.ai/chat/completions';
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b', // Replace with your actual API key
-    };
 
-    const data = {
+  // const sendMessage = async (text: string) => {
+
+  //   const requestData = {
+  //     model: 'driver_mind',
+  //     messages: [
+  //       {
+  //         role: 'system',
+  //         content: 'analyse the data',
+  //       },
+  //       {
+  //         role: 'user',
+  //         content: text,
+  //       },
+  //     ],
+  //     stream: true,
+  //   };
+  //   try {
+  //     const response = await fetch('/api/proxy', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(requestData),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(`Error fetching data: ${response.statusText}`);
+  //     }
+
+  //     const responseData = await response.json();
+  //     // console.log(responseData);
+  //     console.log(responseData.choices[0].message.content);
+  //     const stream = AssistantStream.fromReadableStream(response.body);
+  //     handleReadableStream(stream);
+  //     setInputDisabled(false);
+
+  //     // setData(responseData);
+  //   } catch (err) {
+  //     setError(err.message);
+  //   }
+  // };
+  const sendMessage = async (text: string) => {
+    const requestData = {
       model: 'driver_mind',
       messages: [
         {
@@ -104,34 +153,70 @@ const DatabaseChat = ({
           content: text,
         },
       ],
-      stream: false,
+      stream: true,
     };
 
     try {
-      const response = await fetch(chat_url, {
+      const response = await fetch('/api/proxy', {
         method: 'POST',
-        headers: headers,
-        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
       });
-      console.log(response);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error(`Error: ${errorData.detail.title}: ${errorData.detail.detail}`);
-        return;
+        throw new Error(`Error fetching data: ${response.statusText}`);
       }
 
-      const body = await response.json();
-      console.log('Response:', body);
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
 
-      if (body.choices && body.choices[0] && body.choices[0].message && body.choices[0].message.content) {
-        console.log('Assistant Response:', body.choices[0].message.content);
-      } else {
-        console.log('Unexpected response format:', body);
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') {
+                // Stream completed
+                setInputDisabled(false);
+                return;
+              }
+              try {
+                const parsed = JSON.parse(data);
+                handleStreamEvent(parsed);
+              } catch (e) {
+                console.error('Error parsing stream data:', e);
+              }
+            }
+          }
+        }
       }
-    } catch (error) {
-      console.error('Failed to fetch:', error.message);
+    } catch (err) {
+      setError(err.message);
+      setInputDisabled(false);
     }
   };
+
+  const handleStreamEvent = (event) => {
+    switch (event.choices[0].delta.role) {
+      case 'assistant':
+        handleTextDelta({ value: event.choices[0].delta.content });
+        break;
+      // Add other cases as needed
+    }
+  };
+
+
 
 
   const submitActionResult = async (runId, toolCallOutputs) => {
