@@ -30,7 +30,7 @@ const DatabaseSearchPage = () => {
           }}
           variant="contained"
         >
-          {showConnectDatabase ? "close" : "Connect Database"}
+          {showConnectDatabase ? "close" : "Create Agent"}
         </Button>
         <Modal open={showConnectDatabase} onClose={toggleConnectDatabase}>
           <ConnectDatabase />

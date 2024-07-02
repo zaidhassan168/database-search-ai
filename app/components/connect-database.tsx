@@ -179,7 +179,7 @@ const ConnectDatabase = () => {
               marginTop: 2,
               backgroundColor: "#3f51b5",
               "&:hover": {
-                backgroundColor: "#283593",
+                backgroundColor: "black",
               },
             }}
           >
