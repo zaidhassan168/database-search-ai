@@ -10,6 +10,7 @@ const Home = () => {
     "File search": "file-search",
     All: "all",
     "Database search": "database-search",
+    "python-function": "python-function",
   };
 
   return (
