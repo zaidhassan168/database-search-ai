@@ -20,6 +20,7 @@ export default function pythonFunction () {
     setError('');
     try {
       const response = await fetch('/api/python');
+      console.log('Response:', response);
       const data = await response.json();
       if (response.ok) {
         setResult(data.result as PythonResult);

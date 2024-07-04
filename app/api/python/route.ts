@@ -8,10 +8,10 @@ const execAsync = promisify(exec);
 export async function GET() {
   try {
     // Use path.join to create a platform-independent path to your script
-    const scriptPath = path.join(process.cwd(), 'scripts', 'your_script.py');
+    const scriptPath = path.join(process.cwd(), 'scripts', 'my_script.py');
     
     // Run the Python script
-    const { stdout, stderr } = await execAsync(`python "${scriptPath}"`);
+    const { stdout, stderr } = await execAsync(`python3 "${scriptPath}"`);
     
     if (stderr) {
       console.error('stderr:', stderr);
