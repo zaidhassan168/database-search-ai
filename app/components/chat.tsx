@@ -1,67 +1,127 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import styles from "./basic-chat.module.css";
-import { AssistantStream } from "openai/lib/AssistantStream";
-import Markdown from "react-markdown";
+import { Box, Avatar, TextField, Button, Typography, Paper, IconButton, CircularProgress } from "@mui/material";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import Markdown from "react-markdown";
+import SendIcon from '@mui/icons-material/Send';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { AssistantStream } from "openai/lib/AssistantStream";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import OpenAI from "openai";
-import { Components } from 'react-markdown'
-
-
+import { Components } from 'react-markdown';
+import { keyframes } from '@emotion/react';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
 type MessageProps = {
   role: "user" | "assistant" | "code";
   text: string;
 };
 
+const slideUp = keyframes`
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+`;
+
+
 const UserMessage = ({ text }: { text: string }) => (
-  <div className={styles.userMessage}>
-    <div className={styles.avatar}>👤</div>
-    <div className={styles.messageContent}>{text}</div>
-  </div>
+  <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease` }}>
+    <Avatar sx={{ bgcolor: 'primary.main', color: 'white' }}>👤</Avatar>
+    <Paper elevation={2} sx={{ 
+      padding: 2, 
+      marginLeft: 2, 
+      borderRadius: '20px 20px 20px 5px', 
+      bgcolor: 'primary.light', 
+      color: 'white',
+      maxWidth: '80%'
+    }}>
+      <Typography>{text}</Typography>
+    </Paper>
+  </Box>
 );
 
 interface AssistantMessageProps {
   text: string;
 }
+
 interface CodeProps {
   className?: string;
   children: React.ReactNode;
 }
+const AssistantMessage: React.FC<AssistantMessageProps> = ({ text }) => {
+  const codeRef = useRef(null);
 
-const AssistantMessage: React.FC<AssistantMessageProps> = ({ text }) => (
-  <div className={styles.assistantMessage}>
-    <div className={styles.avatar}>🤖</div>
-    <div className={styles.messageContent}>
+  useEffect(() => {
+    if (codeRef.current) {
+      hljs.highlightBlock(codeRef.current);
+    }
+  }, [text]);
+  return(
+  <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease` }}>
+    <Avatar sx={{ bgcolor: 'success.main', color: 'white', alignSelf: 'flex-start' }}>🤖</Avatar>
+    <Paper
+      elevation={2}
+      sx={{
+        padding: 2,
+        marginLeft: 2,
+        borderRadius: '5px 20px 20px 20px',
+        bgcolor: 'success.light',
+        color: 'white',
+        maxWidth: 'calc(100% - 48px)', // Adjust based on Avatar size
+        overflow: 'hidden', // Ensures no overflow in any direction
+        boxSizing: 'border-box', // Include padding and border in the element's total width and height
+      }}
+    >
       <Markdown
         components={{
-          code: ({ className, children, ...props }: CodeProps) => {
+          code: ({ className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || '');
-            const isInline = !match;
-            return isInline ? (
+            return !match ? (
               <code className={className} {...props}>
                 {children}
               </code>
             ) : (
+              <Box > {/* Remove negative margins */}
+                {/* <SyntaxHighlighter
+                  style={atomDark}
+                  language={match[1]}
+                  PreTag="div"
+                  {...props}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter> */}
               <SyntaxHighlighter
-                style={atomDark}
-                language={match ? match[1] : ''}
-                PreTag="div"
-                {...props}
+              style={atomDark}
+              customStyle={{
+
+                fontSize: '0.6em',
+              }}
+              language={match[1]}
               >
                 {String(children).replace(/\n$/, '')}
               </SyntaxHighlighter>
+              </Box>
             );
           },
+          p: ({ children }) => (
+            <Typography component="p" sx={{ mb: 1 }}>
+              {children}
+            </Typography>
+          ),
         }}
       >
         {text}
       </Markdown>
-    </div>
-  </div>
-);
+    </Paper>
+  </Box>
+)}
 
 const CodeMessage = ({ text }: { text: string }) => {
   const handleCopy = () => {
@@ -69,20 +129,42 @@ const CodeMessage = ({ text }: { text: string }) => {
   };
 
   return (
-    <div className={styles.codeMessage}>
-      <div className={styles.avatar}>💻</div>
-      <div className={styles.messageContent}>
-        <div className={styles.codeHeader}>
-          <span>Code</span>
-          <button onClick={handleCopy} className={styles.copyButton}>
-            Copy
-          </button>
-        </div>
-        <SyntaxHighlighter style={atomDark} language="python">
+    <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease`, width: '100%' }}>
+      <Avatar sx={{ bgcolor: 'info.main', color: 'white', flexShrink: 0 }}>💻</Avatar>
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          padding: 2, 
+          marginLeft: 2, 
+          borderRadius: 2, 
+          position: 'relative', 
+          bgcolor: 'info.light', 
+          color: 'white',
+          maxWidth: 'calc(100% - 48px)',
+          overflowX: 'auto'
+        }}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="subtitle1">Code</Typography>
+          <IconButton onClick={handleCopy} color="inherit" size="small">
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </Box>
+        <SyntaxHighlighter 
+          style={atomDark} 
+          language="text"
+          customStyle={{
+            margin: 0,
+            padding: '12px',
+            borderRadius: '8px',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}
+        >
           {text}
         </SyntaxHighlighter>
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 };
 
@@ -286,37 +368,47 @@ const Chat = ({
   };
 
   return (
-    <div className={styles.chatContainer}>
-      <div className={styles.messages}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh', 
+      p: 3, 
+      bgcolor: '#f0f4f8'
+    }}>
+      <Box sx={{ 
+        flexGrow: 1, 
+        overflow: 'auto', // This allows scrolling
+        mb: 3, 
+        p: 3, 
+        bgcolor: 'white', 
+        borderRadius: 3,
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
         {messages.map((msg, index) => (
           <Message key={index} role={msg.role} text={msg.text} />
         ))}
         {isTyping && (
-          <div className={styles.typingIndicator}>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
+            <CircularProgress size={20} />
+          </Box>
         )}
         <div ref={messagesEndRef} />
-      </div>
-      <form
-        onSubmit={handleSubmit}
-        className={`${styles.inputForm} ${styles.clearfix}`}
-      >
-        <input
-          type="text"
-          className={styles.input}
+      </Box>
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', alignItems: 'center', bgcolor: 'white', borderRadius: 2, p: 1 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Enter your question"
           disabled={inputDisabled}
+          sx={{ mr: 2 }}
         />
-        <button type="submit" className={styles.button} disabled={inputDisabled}>
-          Send
-        </button>
-      </form>
-    </div>
+        <Button type="submit" variant="contained" color="primary" disabled={inputDisabled}>
+          <SendIcon />
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
