@@ -1,0 +1,7 @@
+{
+    "functions": {
+      "app/api/create_mind/route.ts": {
+        "includeFiles": "app/api/create_mind/create_mind"
+      }
+    }
+  }
