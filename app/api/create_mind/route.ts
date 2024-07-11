@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import path from 'path';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<Response> {
   const { name, description } = await req.json();
 
   const scriptPath = path.join(process.cwd(), 'app/api/create_mind', 'create_mind.py');
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     errorOccurred = true;
   });
 
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     pythonProcess.on('close', (code) => {
       if (code === 0 && !errorOccurred) {
         resolve(NextResponse.json({ result: JSON.parse(result) }, { status: 200 }));
@@ -31,6 +31,6 @@ export async function POST(req: NextRequest) {
   });
 }
 
-export async function GET() {
+export async function GET(): Promise<Response> {
   return NextResponse.json({ error: `Method GET Not Allowed` }, { status: 405 });
 }
