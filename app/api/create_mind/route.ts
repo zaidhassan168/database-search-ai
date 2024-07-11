@@ -9,17 +9,20 @@ export async function POST(req: NextRequest) {
   const pythonProcess = spawn('python3', [scriptPath, '--name', name, '--description', description]);
 
   let result = '';
+  let errorOccurred = false;
+
   pythonProcess.stdout.on('data', (data) => {
     result += data.toString();
   });
 
   pythonProcess.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    errorOccurred = true;
   });
 
   return new Promise((resolve) => {
     pythonProcess.on('close', (code) => {
-      if (code === 0) {
+      if (code === 0 && !errorOccurred) {
         resolve(NextResponse.json({ result: JSON.parse(result) }, { status: 200 }));
       } else {
         resolve(NextResponse.json({ error: 'Python script execution failed' }, { status: 500 }));
