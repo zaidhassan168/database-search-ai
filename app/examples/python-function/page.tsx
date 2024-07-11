@@ -9,7 +9,7 @@ interface PythonResult {
   custom_data: any;  // Replace 'any' with a more specific type if possible
 }
 
-export default function pythonFunction () {
+export default function PythonFunction() {
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [result, setResult] = useState<PythonResult | null>(null);
@@ -20,18 +20,18 @@ export default function pythonFunction () {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/python/create-mind', {
+      const response = await fetch('/api/create_mind', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ name, description })
       });
-  
+
       console.log('Response:', response);
       const data = await response.json();
       console.log('Data:', data);
-  
+
       if (response.ok) {
         setResult(data.result as PythonResult);
       } else {
@@ -62,6 +62,7 @@ export default function pythonFunction () {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="p-4 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-4">Python Script Runner</h1>
