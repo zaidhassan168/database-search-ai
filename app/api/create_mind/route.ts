@@ -30,7 +30,3 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
   });
 }
-
-export async function GET(): Promise<Response> {
-  return NextResponse.json({ error: `Method GET Not Allowed` }, { status: 405 });
-}
