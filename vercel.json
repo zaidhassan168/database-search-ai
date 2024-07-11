@@ -1,9 +1,9 @@
 {
-    "builds": [
-      { "src": "package.json", "use": "@vercel/next" },
-      { "src": "scripts/create_mind.py", "use": "@vercel/python" }
-    ],
-    "routes": [
-      { "src": "/api/create-mind", "dest": "/api/create-mind.js" }
-    ]
-  }
+  "builds": [
+    { "src": "package.json", "use": "@vercel/next" },
+    { "src": "scripts/create_mind.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/create-mind", "dest": "/api/create-mind.ts" }
+  ]
+}
