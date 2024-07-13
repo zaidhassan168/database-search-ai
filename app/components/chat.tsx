@@ -5,8 +5,9 @@ import { Box, Avatar, TextField, Button, Typography, Paper, IconButton, Circular
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Markdown from "react-markdown";
-import SendIcon from '@mui/icons-material/Send';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { CodeBlock } from '@atlaskit/code';
+
 import { AssistantStream } from "openai/lib/AssistantStream";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import OpenAI from "openai";
@@ -14,6 +15,7 @@ import { Components } from 'react-markdown';
 import { keyframes } from '@emotion/react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
+
 type MessageProps = {
   role: "user" | "assistant" | "code";
   text: string;
@@ -33,7 +35,7 @@ const slideUp = keyframes`
 
 const UserMessage = ({ text }: { text: string }) => (
   <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease` }}>
-    <Avatar sx={{ bgcolor: 'primary.main', color: 'white' }}>👤</Avatar>
+    <Avatar sx={{ bgcolor: 'white', color: 'white' }}>👤</Avatar>
     <Paper elevation={2} sx={{ 
       padding: 2, 
       marginLeft: 2, 
@@ -56,24 +58,17 @@ interface CodeProps {
   children: React.ReactNode;
 }
 const AssistantMessage: React.FC<AssistantMessageProps> = ({ text }) => {
-  const codeRef = useRef(null);
-
-  useEffect(() => {
-    if (codeRef.current) {
-      hljs.highlightBlock(codeRef.current);
-    }
-  }, [text]);
   return(
   <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease` }}>
-    <Avatar sx={{ bgcolor: 'success.main', color: 'white', alignSelf: 'flex-start' }}>🤖</Avatar>
+    <Avatar sx={{ bgcolor: 'white', color: 'white', alignSelf: 'flex-start' }}>🤖</Avatar>
     <Paper
       elevation={2}
       sx={{
         padding: 2,
         marginLeft: 2,
         borderRadius: '5px 20px 20px 20px',
-        bgcolor: 'success.light',
-        color: 'white',
+        bgcolor: 'white',
+        color: 'black',
         maxWidth: 'calc(100% - 48px)', // Adjust based on Avatar size
         overflow: 'hidden', // Ensures no overflow in any direction
         boxSizing: 'border-box', // Include padding and border in the element's total width and height
@@ -88,25 +83,8 @@ const AssistantMessage: React.FC<AssistantMessageProps> = ({ text }) => {
                 {children}
               </code>
             ) : (
-              <Box > {/* Remove negative margins */}
-                {/* <SyntaxHighlighter
-                  style={atomDark}
-                  language={match[1]}
-                  PreTag="div"
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter> */}
-              <SyntaxHighlighter
-              style={atomDark}
-              customStyle={{
-
-                fontSize: '0.6em',
-              }}
-              language={match[1]}
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <Box >
+                <CodeBlock  text={String(children).replace(/\n$/, '')}  language="tsx" />
               </Box>
             );
           },
@@ -372,14 +350,14 @@ const Chat = ({
       display: 'flex', 
       flexDirection: 'column', 
       height: '100vh', 
-      p: 3, 
+      p: 1, 
       bgcolor: '#f0f4f8'
     }}>
       <Box sx={{ 
-        flexGrow: 1, 
+        // flexGrow: 1, 
         overflow: 'auto', // This allows scrolling
         mb: 3, 
-        p: 3, 
+        p: 2, 
         bgcolor: 'white', 
         borderRadius: 3,
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
@@ -405,7 +383,7 @@ const Chat = ({
           sx={{ mr: 2 }}
         />
         <Button type="submit" variant="contained" color="primary" disabled={inputDisabled}>
-          <SendIcon />
+          send
         </Button>
       </Box>
     </Box>
