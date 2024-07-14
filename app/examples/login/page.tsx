@@ -1,4 +1,3 @@
-'use client';
 import React from 'react';
 import {
   Avatar,
@@ -16,7 +15,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 const theme = createTheme();
 
-const PythonFunction: React.FC = () => {
+const LoginPage: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <Container component="main" maxWidth="xs">
@@ -82,4 +81,4 @@ const PythonFunction: React.FC = () => {
   );
 };
 
-export default PythonFunction;
+export default LoginPage;

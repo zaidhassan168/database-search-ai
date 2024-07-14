@@ -1,19 +1,31 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Avatar, TextField, Button, Typography, Paper, IconButton, CircularProgress } from "@mui/material";
+import { 
+  Box, 
+  Avatar, 
+  TextField, 
+  IconButton, 
+  Typography, 
+  Paper, 
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+  Fade,
+  Zoom
+} from "@mui/material";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Markdown from "react-markdown";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import SendIcon from '@mui/icons-material/Send';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { CodeBlock } from '@atlaskit/code';
 
 import { AssistantStream } from "openai/lib/AssistantStream";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import OpenAI from "openai";
-import { Components } from 'react-markdown';
 import { keyframes } from '@emotion/react';
-import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 
 type MessageProps = {
@@ -21,128 +33,114 @@ type MessageProps = {
   text: string;
 };
 
-const slideUp = keyframes`
-  from {
-    transform: translateY(50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+const pulseAnimation = keyframes`
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
 `;
 
 
-const UserMessage = ({ text }: { text: string }) => (
-  <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease` }}>
-    <Avatar sx={{ bgcolor: 'white', color: 'white' }}>👤</Avatar>
-    <Paper elevation={2} sx={{ 
-      padding: 2, 
-      marginLeft: 2, 
-      borderRadius: '20px 20px 20px 5px', 
-      bgcolor: 'primary.light', 
-      color: 'white',
-      maxWidth: '80%'
-    }}>
-      <Typography>{text}</Typography>
-    </Paper>
-  </Box>
-);
+const UserMessage = ({ text }: { text: string }) => {
+  const theme = useTheme();
+  return (
+    <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Paper elevation={1} sx={{ 
+          padding: 2, 
+          borderRadius: '20px 20px 5px 20px', 
+          bgcolor: theme.palette.primary.main, 
+          color: 'white',
+          maxWidth: '80%',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        }}>
+          <Typography variant="body1">{text}</Typography>
+        </Paper>
+      </Box>
+    </Zoom>
+  );
+};
 
-interface AssistantMessageProps {
-  text: string;
-}
-
-interface CodeProps {
-  className?: string;
-  children: React.ReactNode;
-}
-const AssistantMessage: React.FC<AssistantMessageProps> = ({ text }) => {
-  return(
-  <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease` }}>
-    <Avatar sx={{ bgcolor: 'white', color: 'white', alignSelf: 'flex-start' }}>🤖</Avatar>
-    <Paper
-      elevation={2}
-      sx={{
-        padding: 2,
-        marginLeft: 2,
-        borderRadius: '5px 20px 20px 20px',
-        bgcolor: 'white',
-        color: 'black',
-        maxWidth: 'calc(100% - 48px)', // Adjust based on Avatar size
-        overflow: 'hidden', // Ensures no overflow in any direction
-        boxSizing: 'border-box', // Include padding and border in the element's total width and height
-      }}
-    >
-      <Markdown
-        components={{
-          code: ({ className, children, ...props }) => {
-            const match = /language-(\w+)/.exec(className || '');
-            return !match ? (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            ) : (
-              <Box >
-                <CodeBlock  text={String(children).replace(/\n$/, '')}  language="tsx" />
-              </Box>
-            );
-          },
-          p: ({ children }) => (
-            <Typography component="p" sx={{ mb: 1 }}>
-              {children}
-            </Typography>
-          ),
-        }}
-      >
-        {text}
-      </Markdown>
-    </Paper>
-  </Box>
-)}
+const AssistantMessage = ({ text }: { text: string }) => {
+  const theme = useTheme();
+  return (
+    <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+      <Box display="flex" mb={2}>
+        <Avatar sx={{ bgcolor: theme.palette.secondary.main, mr: 1 }}>AI</Avatar>
+        <Paper elevation={1} sx={{
+          padding: 2,
+          borderRadius: '20px 20px 20px 5px',
+          bgcolor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          maxWidth: 'calc(100% - 48px)',
+          overflow: 'hidden',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        }}>
+          <Markdown
+            components={{
+              code: ({ className, children, ...props }) => {
+                const match = /language-(\w+)/.exec(className || '');
+                return match ? (
+                  <Box sx={{ mt: 1, mb: 1 }}>
+                    <CodeBlock text={String(children).replace(/\n$/, '')} language='js' />
+                  </Box>
+                ) : (
+                  <code className={className} {...props}>{children}</code>
+                );
+              },
+              p: ({ children }) => (
+                <Typography variant="body1" sx={{ mb: 1 }}>{children}</Typography>
+              ),
+            }}
+          >
+            {text}
+          </Markdown>
+        </Paper>
+      </Box>
+    </Zoom>
+  );
+};
 
 const CodeMessage = ({ text }: { text: string }) => {
+  const theme = useTheme();
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
   };
 
   return (
-    <Box display="flex" mb={3} sx={{ animation: `${slideUp} 0.5s ease`, width: '100%' }}>
-      <Avatar sx={{ bgcolor: 'info.main', color: 'white', flexShrink: 0 }}>💻</Avatar>
-      <Paper 
-        elevation={2} 
-        sx={{ 
+    <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+      <Box display="flex" mb={2} sx={{ width: '100%' }}>
+        <Avatar sx={{ bgcolor: theme.palette.info.main, mr: 1 }}>{'</>'}</Avatar>
+        <Paper elevation={1} sx={{ 
           padding: 2, 
-          marginLeft: 2, 
           borderRadius: 2, 
           position: 'relative', 
-          bgcolor: 'info.light', 
-          color: 'white',
+          bgcolor: theme.palette.grey[900],
           maxWidth: 'calc(100% - 48px)',
-          overflowX: 'auto'
-        }}
-      >
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="subtitle1">Code</Typography>
-          <IconButton onClick={handleCopy} color="inherit" size="small">
-            <ContentCopyIcon fontSize="small" />
-          </IconButton>
-        </Box>
-        <SyntaxHighlighter 
-          style={atomDark} 
-          language="text"
-          customStyle={{
-            margin: 0,
-            padding: '12px',
-            borderRadius: '8px',
-            maxHeight: '300px',
-            overflowY: 'auto'
-          }}
-        >
-          {text}
-        </SyntaxHighlighter>
-      </Paper>
-    </Box>
+          overflowX: 'auto',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="subtitle2" color="white">Code</Typography>
+            <IconButton onClick={handleCopy} size="small" sx={{ color: 'white' }}>
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          </Box>
+          <SyntaxHighlighter 
+            style={atomDark} 
+            language="text"
+            customStyle={{
+              margin: 0,
+              padding: '12px',
+              borderRadius: '4px',
+              maxHeight: '300px',
+              overflowY: 'auto'
+            }}
+          >
+            {text}
+          </SyntaxHighlighter>
+        </Paper>
+      </Box>
+    </Zoom>
   );
 };
 
@@ -160,14 +158,10 @@ const Message = ({ role, text }: MessageProps) => {
 };
 
 type ChatProps = {
-  functionCallHandler?: (
-    toolCall: RequiredActionFunctionToolCall
-  ) => Promise<string>;
+  functionCallHandler?: (toolCall: RequiredActionFunctionToolCall) => Promise<string>;
 };
 
-const Chat = ({
-  functionCallHandler = () => Promise.resolve(""),
-}: ChatProps) => {
+const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) => {
   const [userInput, setUserInput] = useState<string>("");
   const [messages, setMessages] = useState<MessageProps[]>([]);
   const [inputDisabled, setInputDisabled] = useState<boolean>(false);
@@ -175,6 +169,8 @@ const Chat = ({
   const [isTyping, setIsTyping] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -187,9 +183,7 @@ const Chat = ({
   useEffect(() => {
     const createThread = async () => {
       try {
-        const res = await fetch(`/api/assistants/threads`, {
-          method: "POST",
-        });
+        const res = await fetch(`/api/assistants/threads`, { method: "POST" });
         const data = await res.json();
         setThreadId(data.threadId);
       } catch (error) {
@@ -198,6 +192,7 @@ const Chat = ({
     };
     createThread();
   }, []);
+
 
   const sendMessage = async (text: string) => {
     try {
@@ -346,46 +341,110 @@ const Chat = ({
   };
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100vh', 
-      p: 1, 
-      bgcolor: '#f0f4f8'
-    }}>
-      <Box sx={{ 
-        // flexGrow: 1, 
-        overflow: 'auto', // This allows scrolling
-        mb: 3, 
-        p: 2, 
-        bgcolor: 'white', 
-        borderRadius: 3,
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-      }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: "linear-gradient(135deg, #f5f7fa, #c3cfe2)", // Modern gradient
+        fontFamily: "Open Sans, sans-serif", // Clean font
+      }}
+    >
+      <Paper // Chat message area
+        elevation={0}
+        sx={{
+          flexGrow: 1,
+          overflow: "auto",
+          padding: 3,
+          "&::-webkit-scrollbar": { width: 8 }, // Improved scrollbar style
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(0,0,0,.2)",
+            borderRadius: 8,
+          },
+        }}
+      >
         {messages.map((msg, index) => (
           <Message key={index} role={msg.role} text={msg.text} />
         ))}
-        {isTyping && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
-            <CircularProgress size={20} />
-          </Box>
+        {isTyping && ( // Typing indicator animation
+          <Fade in={isTyping}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Avatar
+                sx={{
+                  bgcolor: theme.palette.secondary.main,
+                  mr: 1,
+                  width: 30,
+                  height: 30,
+                }}
+              >
+                {/* You can replace this with a custom AI logo */}
+                AI
+              </Avatar>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  p: 1,
+                  bgcolor: theme.palette.background.paper,
+                  borderRadius: "10px",
+                  animation: `${pulseAnimation} 1.5s infinite`,
+                }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <CircularProgress
+                    key={i}
+                    size={8}
+                    sx={{ animationDelay: `${i * 0.2}s` }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Fade>
         )}
         <div ref={messagesEndRef} />
-      </Box>
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', alignItems: 'center', bgcolor: 'white', borderRadius: 2, p: 1 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          placeholder="Enter your question"
-          disabled={inputDisabled}
-          sx={{ mr: 2 }}
-        />
-        <Button type="submit" variant="contained" color="primary" disabled={inputDisabled}>
-          send
-        </Button>
-      </Box>
+      </Paper>
+
+      <Paper // Input area
+        elevation={3}
+        sx={{
+          padding: 2,
+          borderTop: `1px solid #e0e0e0`, 
+        }}
+      >
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton color="primary" sx={{ mr: 1 }}>
+              <AttachFileIcon />
+            </IconButton>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Type your message..."
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              disabled={inputDisabled}
+              InputProps={{
+                sx: { borderRadius: 20 }, // Rounded input
+              }}
+            />
+            <IconButton 
+              type="submit"
+              color="primary"
+              disabled={inputDisabled}
+              sx={{
+                borderRadius: '50%',
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.primary.main,
+                color: 'white',
+                '&:hover': {
+                  bgcolor: theme.palette.primary.dark,
+                },
+              }}
+            >
+              <SendIcon />
+            </IconButton>
+          </Box>
+      </Paper>
     </Box>
   );
 };
