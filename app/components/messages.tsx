@@ -37,17 +37,19 @@ export const UserMessage = ({ text }: { text: string }) => {
 export const AssistantMessage = ({ text }: { text: string }) => {
     const theme = useTheme();
     return (
-        <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+        <Zoom in={true}>
             <Box display="flex" mb={2}>
                 <Avatar sx={{ bgcolor: theme.palette.secondary.main, mr: 1 }}>AI</Avatar>
-                <Paper elevation={1} sx={{
+                <Paper  sx={{
                     padding: 2,
-                    borderRadius: '20px 20px 20px 5px',
+                    // borderRadius: '20px 20px 20px 5px',
                     bgcolor: theme.palette.background.paper,
                     color: theme.palette.text.primary,
                     maxWidth: 'calc(100% - 48px)',
                     overflow: 'hidden',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                    borderColor: theme.palette.divider,
+                    borderWidth: '1px',
                 }}>
                     <Markdown
                         components={{

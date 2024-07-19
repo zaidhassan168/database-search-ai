@@ -1,12 +1,11 @@
 import React from "react";
-import { Box, Paper, CircularProgress, Fade, Avatar, useTheme } from "@mui/material";
+import { Box, Typography, Avatar, useTheme } from "@mui/material";
 import { UserMessage, AssistantMessage, CodeMessage } from "./messages";
 import { keyframes } from '@emotion/react';
 
-const pulseAnimation = keyframes`
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+const fadeInAnimation = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
 `;
 
 type MessageProps = {
@@ -41,57 +40,47 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
     }, [messages]);
 
     return (
-        <Paper
-            elevation={0}
+        <Box
             sx={{
                 flexGrow: 1,
                 overflowY: "auto",
                 padding: 3,
                 "&::-webkit-scrollbar": { width: 8 },
                 "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: "rgba(0,0,0,.2)",
+                    backgroundColor: "rgba(0,0,0,.1)",
                     borderRadius: 8,
                 },
             }}
         >
             {messages.map((msg, index) => (
-                <Message key={index} role={msg.role} text={msg.text} />
+                <Box key={index} sx={{ mb: 2, animation: `${fadeInAnimation} 0.3s ease-out` }}>
+                    <Message role={msg.role} text={msg.text} />
+                </Box>
             ))}
             {isTyping && (
-                <Fade in={isTyping}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <Avatar
-                            sx={{
-                                bgcolor: theme.palette.secondary.main,
-                                mr: 1,
-                                width: 30,
-                                height: 30,
-                            }}
-                        >
-                            AI
-                        </Avatar>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                gap: 1,
-                                p: 1,
-                                bgcolor: theme.palette.background.paper,
-                                borderRadius: "10px",
-                                animation: `${pulseAnimation} 1.5s infinite`,
-                            }}
-                        >
-                            {[0, 1, 2].map((i) => (
-                                <CircularProgress
-                                    key={i}
-                                    size={8}
-                                    sx={{ animationDelay: `${i * 0.2}s` }}
-                                />
-                            ))}
-                        </Box>
-                    </Box>
-                </Fade>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Avatar
+                        sx={{
+                            bgcolor: theme.palette.primary.main,
+                            mr: 1,
+                            width: 30,
+                            height: 30,
+                        }}
+                    >
+                        AI
+                    </Avatar>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: theme.palette.text.secondary,
+                            animation: `${fadeInAnimation} 0.5s infinite alternate`,
+                        }}
+                    >
+                        Thinking...
+                    </Typography>
+                </Box>
             )}
             <div ref={messagesEndRef} />
-        </Paper>
+        </Box>
     );
 };

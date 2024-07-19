@@ -3,28 +3,21 @@ import { Box, TextField, IconButton, Paper, useTheme } from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-type ChatInputProps = {
-    userInput: string;
-    setUserInput: (input: string) => void;
-    handleSubmit: (e: React.FormEvent) => void;
-    inputDisabled: boolean;
-    inputRef: React.RefObject<HTMLInputElement>;
-};
-
-export const ChatInput: React.FC<ChatInputProps> = ({ userInput, setUserInput, handleSubmit, inputDisabled, inputRef }) => {
+export const ChatInput = ({ userInput, setUserInput, handleSubmit, inputDisabled, inputRef }) => {
     const theme = useTheme();
 
     return (
         <Paper
-            elevation={3}
+            elevation={0}
             sx={{
-                p: 2,
+                p: 1,
                 borderTop: `1px solid ${theme.palette.divider}`,
+                backgroundColor: theme.palette.background.default,
             }}
         >
             <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', alignItems: 'center' }}>
-                <IconButton color="primary" sx={{ mr: 1 }}>
-                    <AttachFileIcon />
+                <IconButton color="primary" size="small" sx={{ mr: 1 }}>
+                    <AttachFileIcon fontSize="small" />
                 </IconButton>
                 <TextField
                     fullWidth
@@ -34,7 +27,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({ userInput, setUserInput, h
                     onChange={(e) => setUserInput(e.target.value)}
                     disabled={inputDisabled}
                     InputProps={{
-                        sx: { borderRadius: 20 },
+                        sx: {
+                            borderRadius: 1,
+                            '& fieldset': {
+                                borderColor: theme.palette.divider,
+                                borderWidth: '1px',
+                            },
+                        },
                     }}
                     inputRef={inputRef}
                 />
@@ -42,19 +41,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({ userInput, setUserInput, h
                     type="submit"
                     color="primary"
                     disabled={inputDisabled}
+                    size="small"
                     sx={{
-                        borderRadius: '50%',
-                        width: 48,
-                        height: 48,
-                        bgcolor: theme.palette.primary.main,
-                        color: theme.palette.primary.contrastText,
-                        '&:hover': {
-                            bgcolor: theme.palette.primary.dark,
-                        },
                         ml: 1,
                     }}
                 >
-                    <SendIcon />
+                    <SendIcon fontSize="small" />
                 </IconButton>
             </Box>
         </Paper>
