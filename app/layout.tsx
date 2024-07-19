@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
       <AppRouterCacheProvider>
         {assistantId ? children : <Warnings />}
-        <img className="logo" src="/openai.svg" alt="OpenAI Logo" />
+        {/* <img className="logo" src="/openai.svg" alt="OpenAI Logo" /> */}
         </AppRouterCacheProvider>
       </body>
     </html>

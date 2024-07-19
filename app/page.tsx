@@ -13,6 +13,7 @@ import {
   createTheme 
 } from '@mui/material';
 import { styled } from '@mui/system';
+import { url } from 'inspector';
 
 // Custom Theme (Customize to your liking)
 const theme = createTheme({
@@ -39,7 +40,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  transition: theme.transitions.create('box-shadow'),
   '&:hover': {
     boxShadow: theme.shadows[4],
   },
@@ -53,6 +53,8 @@ const Home = () => {
     "All": { url: "all" },
     "Database Search": { url: "database-search" },
     "Python Function": { url: "python-function" },
+    "Example Page": {url: "example-page"},
+    "Main-Chat": {url: "main-chat"},
   };
 
   return (
