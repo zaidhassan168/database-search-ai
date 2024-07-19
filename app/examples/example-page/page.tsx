@@ -14,6 +14,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import 'highlight.js/styles/atom-one-dark.css';
 import { AssistantStream } from "openai/lib/AssistantStream";
+import { AssistantStreamEvent } from "openai/resources/beta/assistants";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import { Sidebar } from "@/app/components/side-bar";
 import { MessageList } from "@/app/components/message-list";
@@ -141,7 +142,7 @@ const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) =>
     };
 
     const handleRequiresAction = async (
-        event: OpenAI.Beta.AssistantStreamEvent.ThreadRunRequiresAction
+        event: AssistantStreamEvent.ThreadRunRequiresAction
     ) => {
         const runId = event.data.id;
         const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
