@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^0.0.36",
     "@atlaskit/code": "^15.4.1",
     "@emotion/cache": "^11.11.0",
     "@emotion/react": "^11.11.4",
@@ -21,6 +22,7 @@
     "@nextui-org/button": "^2.0.34",
     "@nextui-org/system": "^2.2.2",
     "@nextui-org/theme": "^2.2.6",
+    "ai": "^3.2.29",
     "axios": "^1.7.2",
     "bright": "^0.8.5",
     "framer-motion": "^11.2.12",
@@ -35,7 +37,8 @@
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.5.0",
     "readable-stream": "^4.5.2",
-    "url-parse": "^1.5.10"
+    "url-parse": "^1.5.10",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "20.12.7",
