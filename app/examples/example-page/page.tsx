@@ -72,22 +72,25 @@ const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) =>
 
     const sendMessage = async (text: string) => {
         try {
-            setIsTyping(true);
-            const response = await fetch(
-                `/api/assistants/threads/${threadId}/messages`,
-                {
-                    method: "POST",
-                    body: JSON.stringify({ content: text }),
-                }
-            );
-            const stream = AssistantStream.fromReadableStream(response.body);
-            handleReadableStream(stream);
+          setIsTyping(true);
+          const response = await fetch(`/api/assistants/threads/${threadId}/messages`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: text }),
+          });
+          const stream = AssistantStream.fromReadableStream(response.body);
+          handleReadableStream(stream);
         } catch (error) {
-            console.error("Failed to send message:", error);
+          console.error('Failed to send message:', error);
         } finally {
-            setIsTyping(false);
+          setIsTyping(false);
         }
-    };
+      };
+      
+      
+      
 
     const submitActionResult = async (runId: string, toolCallOutputs: any[]) => {
         try {
