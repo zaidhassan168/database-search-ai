@@ -40,6 +40,7 @@ const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) =>
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,6 +48,11 @@ const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) =>
     const toggleDrawer = () => {
         setDrawerOpen(!drawerOpen);
     };
+    useEffect(() => {
+        if (!isTyping && !inputDisabled) {
+            inputRef.current?.focus();
+        }
+    }, [isTyping, inputDisabled]);
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -230,7 +236,7 @@ const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) =>
                     },
                 }}
             >
-             <Sidebar toggleDrawer={toggleDrawer} />
+                <Sidebar toggleDrawer={toggleDrawer} />
 
             </Drawer>
             <Box
@@ -258,7 +264,7 @@ const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) =>
                     </Typography>
                 </Box>
                 <MessageList messages={messages} isTyping={isTyping} />
-                <ChatInput handleSubmit={handleSubmit} inputDisabled={inputDisabled} userInput={userInput} setUserInput={setUserInput} />
+                <ChatInput handleSubmit={handleSubmit} inputDisabled={inputDisabled} userInput={userInput} setUserInput={setUserInput} inputRef={inputRef} />
             </Box>
         </Box>
     );

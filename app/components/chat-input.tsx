@@ -8,9 +8,10 @@ type ChatInputProps = {
     setUserInput: (input: string) => void;
     handleSubmit: (e: React.FormEvent) => void;
     inputDisabled: boolean;
+    inputRef: React.RefObject<HTMLInputElement>;
 };
 
-export const ChatInput: React.FC<ChatInputProps> = ({ userInput, setUserInput, handleSubmit, inputDisabled }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ userInput, setUserInput, handleSubmit, inputDisabled, inputRef }) => {
     const theme = useTheme();
 
     return (
@@ -35,6 +36,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ userInput, setUserInput, h
                     InputProps={{
                         sx: { borderRadius: 20 },
                     }}
+                    inputRef={inputRef}
                 />
                 <IconButton
                     type="submit"
