@@ -73,7 +73,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
                         variant="body2"
                         sx={{
                             color: theme.palette.text.secondary,
-                            animation: `${fadeInAnimation} 0.5s infinite alternate`,
+                            animation: `${fadeInAnimation} 1s infinite alternate`,
                         }}
                     >
                         Thinking...
