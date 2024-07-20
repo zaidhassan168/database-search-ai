@@ -3,15 +3,14 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAbU3b14WbGB_QAREETUMlbRCAGRUCZf_U",
-    authDomain: "elite-elevator-411619.firebaseapp.com",
-    databaseURL: "https://elite-elevator-411619-default-rtdb.firebaseio.com",
-    projectId: "elite-elevator-411619",
-    storageBucket: "elite-elevator-411619.appspot.com",
-    messagingSenderId: "98325339290",
-    appId: "1:98325339290:web:a51c38845c893f1b1b5323"
-  };
-
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
   
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);

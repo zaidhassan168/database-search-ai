@@ -1,15 +1,15 @@
 "use client"
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-    Box,
-    Avatar,
-    TextField,
-    IconButton,
-    Typography,
-    Paper,
-    useTheme,
-    useMediaQuery,
-    Drawer,
+  Box,
+  Avatar,
+  TextField,
+  IconButton,
+  Typography,
+  Paper,
+  useTheme,
+  useMediaQuery,
+  Drawer,
 } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
 import 'highlight.js/styles/atom-one-dark.css';
@@ -21,256 +21,318 @@ import { MessageList } from "@/app/components/message-list";
 import { ChatInput } from "@/app/components/chat-input";
 
 type MessageProps = {
-    role: "user" | "assistant" | "code";
-    text: string;
+  role: "user" | "assistant" | "code";
+  text: string;
 };
 
 type ChatProps = {
-    functionCallHandler?: (toolCall: RequiredActionFunctionToolCall) => Promise<string>;
+  functionCallHandler?: (toolCall: RequiredActionFunctionToolCall) => Promise<string>;
 };
 
+interface SaveMessage {
+  content: string;
+  timestamp: String
+  // Add other properties as needed
+}
+
 const Chat = ({ functionCallHandler = () => Promise.resolve("") }: ChatProps) => {
-    const [userInput, setUserInput] = useState<string>("");
-    const [messages, setMessages] = useState<MessageProps[]>([]);
-    const [inputDisabled, setInputDisabled] = useState<boolean>(false);
-    const [threadId, setThreadId] = useState<string>("");
-    const [isTyping, setIsTyping] = useState<boolean>(false);
-    const [drawerOpen, setDrawerOpen] = useState<boolean>(true);
+  const [userInput, setUserInput] = useState<string>("");
+  const [messages, setMessages] = useState<MessageProps[]>([]);
+  const [inputDisabled, setInputDisabled] = useState<boolean>(false);
+  const [threadId, setThreadId] = useState<string>("");
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(true);
 
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const inputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  useEffect(() => {
+    if (!isTyping && !inputDisabled) {
+      inputRef.current?.focus();
+    }
+  }, [isTyping, inputDisabled]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    const createThread = async () => {
+      try {
+        const res = await fetch(`/api/assistants/threads`, { method: "POST" });
+        const data = await res.json();
+        setThreadId(data.threadId);
+      } catch (error) {
+        console.error("Failed to create thread:", error);
+      }
     };
-    const toggleDrawer = () => {
-        setDrawerOpen(!drawerOpen);
+    createThread();
+  }, []);
+
+  const storeMessage = async (message: SaveMessage): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/save_chats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+      const data = await response.json();
+      return data.success;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return false;
+    }
+  }
+
+  const saveMessages = async () => {
+    if (messages.length === 0) return;
+
+    const newSaveMessage: SaveMessage = {
+      content: JSON.stringify(messages),
+      timestamp: new Date().toISOString(),
     };
-    useEffect(() => {
-        if (!isTyping && !inputDisabled) {
-            inputRef.current?.focus();
+    console.log("Saving messages:", newSaveMessage);
+    try {
+      await storeMessage(newSaveMessage);
+      // setMessages(messages); // Update local state
+    } catch (error) {
+      console.error("Failed to save messages:", error);
+    }
+  };
+  
+  const fetchSavedMessages = async () => {
+    try {
+      const response = await fetch('/api/get_chats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        const savedMessages = JSON.parse(data.content);
+        setMessages(savedMessages);
+      }
+    } catch (error) {
+      console.error('Error fetching saved messages:', error);
+    }
+  };
+  useEffect(() => {
+    fetchSavedMessages();
+  }, []);
+  const sendMessage = async (text: string) => {
+    try {
+      setIsTyping(true);
+      const response = await fetch(`/api/assistants/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: text }),
+      });
+      const stream = AssistantStream.fromReadableStream(response.body);
+      handleReadableStream(stream);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+
+
+
+  const submitActionResult = async (runId: string, toolCallOutputs: any[]) => {
+    try {
+      setIsTyping(true);
+      const response = await fetch(
+        `/api/assistants/threads/${threadId}/actions`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ runId, toolCallOutputs }),
         }
-    }, [isTyping, inputDisabled]);
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+      );
+      const stream = AssistantStream.fromReadableStream(response.body);
+      handleReadableStream(stream);
+    } catch (error) {
+      console.error("Failed to submit action result:", error);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
-    useEffect(() => {
-        const createThread = async () => {
-            try {
-                const res = await fetch(`/api/assistants/threads`, { method: "POST" });
-                const data = await res.json();
-                setThreadId(data.threadId);
-            } catch (error) {
-                console.error("Failed to create thread:", error);
-            }
-        };
-        createThread();
-    }, []);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userInput.trim()) return;
 
-    const sendMessage = async (text: string) => {
-        try {
-          setIsTyping(true);
-          const response = await fetch(`/api/assistants/threads/${threadId}/messages`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content: text }),
-          });
-          const stream = AssistantStream.fromReadableStream(response.body);
-          handleReadableStream(stream);
-        } catch (error) {
-          console.error('Failed to send message:', error);
-        } finally {
-          setIsTyping(false);
-        }
-      };
-      
-      
-      
+    sendMessage(userInput);
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { role: "user", text: userInput },
+    ]);
+    setUserInput("");
+    setInputDisabled(true);
+    scrollToBottom();
+    saveMessages();
+  };
 
-    const submitActionResult = async (runId: string, toolCallOutputs: any[]) => {
-        try {
-            setIsTyping(true);
-            const response = await fetch(
-                `/api/assistants/threads/${threadId}/actions`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ runId, toolCallOutputs }),
-                }
-            );
-            const stream = AssistantStream.fromReadableStream(response.body);
-            handleReadableStream(stream);
-        } catch (error) {
-            console.error("Failed to submit action result:", error);
-        } finally {
-            setIsTyping(false);
-        }
-    };
+  const handleTextCreated = () => {
+    appendMessage("assistant", "");
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!userInput.trim()) return;
+  const handleTextDelta = (delta: any) => {
+    if (delta.value != null) appendToLastMessage(delta.value);
+    if (delta.annotations != null) annotateLastMessage(delta.annotations);
+  };
 
-        sendMessage(userInput);
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            { role: "user", text: userInput },
-        ]);
-        setUserInput("");
-        setInputDisabled(true);
-        scrollToBottom();
-    };
+  const handleImageFileDone = (image: any) => {
+    appendToLastMessage(`\n![${image.file_id}](/api/files/${image.file_id})\n`);
+  };
 
-    const handleTextCreated = () => {
-        appendMessage("assistant", "");
-    };
+  const toolCallCreated = (toolCall: any) => {
+    if (toolCall.type !== "code_interpreter") return;
+    appendMessage("code", "");
+  };
 
-    const handleTextDelta = (delta: any) => {
-        if (delta.value != null) appendToLastMessage(delta.value);
-        if (delta.annotations != null) annotateLastMessage(delta.annotations);
-    };
+  const toolCallDelta = (delta: any, snapshot: any) => {
+    if (delta.type !== "code_interpreter") return;
+    if (!delta.code_interpreter.input) return;
+    appendToLastMessage(delta.code_interpreter.input);
+  };
 
-    const handleImageFileDone = (image: any) => {
-        appendToLastMessage(`\n![${image.file_id}](/api/files/${image.file_id})\n`);
-    };
+  const handleRequiresAction = async (
+    event: AssistantStreamEvent.ThreadRunRequiresAction
+  ) => {
+    const runId = event.data.id;
+    const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
 
-    const toolCallCreated = (toolCall: any) => {
-        if (toolCall.type !== "code_interpreter") return;
-        appendMessage("code", "");
-    };
-
-    const toolCallDelta = (delta: any, snapshot: any) => {
-        if (delta.type !== "code_interpreter") return;
-        if (!delta.code_interpreter.input) return;
-        appendToLastMessage(delta.code_interpreter.input);
-    };
-
-    const handleRequiresAction = async (
-        event: AssistantStreamEvent.ThreadRunRequiresAction
-    ) => {
-        const runId = event.data.id;
-        const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
-
-        const toolCallOutputs = await Promise.all(
-            toolCalls.map(async (toolCall) => {
-                const result = await functionCallHandler(toolCall);
-                return { output: result, tool_call_id: toolCall.id };
-            })
-        );
-
-        setInputDisabled(true);
-        submitActionResult(runId, toolCallOutputs);
-    };
-
-    const handleRunCompleted = () => {
-        setInputDisabled(false);
-    };
-
-    const handleReadableStream = (stream: AssistantStream) => {
-        stream.on("textCreated", handleTextCreated);
-        stream.on("textDelta", handleTextDelta);
-        stream.on("imageFileDone", handleImageFileDone);
-        stream.on("toolCallCreated", toolCallCreated);
-        stream.on("toolCallDelta", toolCallDelta);
-
-        stream.on("event", (event) => {
-            if (event.event === "thread.run.requires_action")
-                handleRequiresAction(event);
-            if (event.event === "thread.run.completed") handleRunCompleted();
-        });
-    };
-
-    const appendToLastMessage = (text: string) => {
-        setMessages((prevMessages) => {
-            const lastMessage = prevMessages[prevMessages.length - 1];
-            const updatedLastMessage = {
-                ...lastMessage,
-                text: lastMessage.text + text,
-            };
-            return [...prevMessages.slice(0, -1), updatedLastMessage];
-        });
-    };
-
-    const appendMessage = (role: "user" | "assistant" | "code", text: string) => {
-        setMessages((prevMessages) => [...prevMessages, { role, text }]);
-    };
-
-    const annotateLastMessage = (annotations: any[]) => {
-        setMessages((prevMessages) => {
-            const lastMessage = prevMessages[prevMessages.length - 1];
-            let updatedText = lastMessage.text;
-
-            annotations.forEach((annotation) => {
-                if (annotation.type === "file_path") {
-                    updatedText = updatedText.replaceAll(
-                        annotation.text,
-                        `/api/files/${annotation.file_path.file_id}`
-                    );
-                }
-            });
-
-            const updatedLastMessage = { ...lastMessage, text: updatedText };
-            return [...prevMessages.slice(0, -1), updatedLastMessage];
-        });
-    };
-
-    return (
-        <Box sx={{ display: 'flex', height: '100vh' }}>
-            <Drawer
-                variant={isMobile ? 'temporary' : 'persistent'}
-                open={drawerOpen}
-                onClose={toggleDrawer}
-                ModalProps={{
-                    keepMounted: true,
-                }}
-                sx={{
-                    width: drawerOpen ? { xs: 250, sm: 300 } : 0,
-                    flexShrink: 0,
-                    '& .MuiDrawer-paper': {
-                        width: { xs: 250, sm: 300 },
-                        boxSizing: 'border-box',
-                        top: 0,
-                        height: '100%',
-                    },
-                }}
-            >
-                <Sidebar toggleDrawer={toggleDrawer} />
-
-            </Drawer>
-            <Box
-                component="main"
-                sx={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100vh',
-                    overflow: 'hidden',
-                }}
-            >
-                <Box sx={{ p: 2, display: 'flex', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="start"
-                        onClick={toggleDrawer}
-                        sx={{ mr: 2, ...(drawerOpen && { display: 'none' }) }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6" noWrap component="div">
-                        AI Chat Assistant
-                    </Typography>
-                </Box>
-                <MessageList messages={messages} isTyping={isTyping} />
-                <ChatInput handleSubmit={handleSubmit} inputDisabled={inputDisabled} userInput={userInput} setUserInput={setUserInput} inputRef={inputRef} />
-            </Box>
-        </Box>
+    const toolCallOutputs = await Promise.all(
+      toolCalls.map(async (toolCall) => {
+        const result = await functionCallHandler(toolCall);
+        return { output: result, tool_call_id: toolCall.id };
+      })
     );
+
+    setInputDisabled(true);
+    submitActionResult(runId, toolCallOutputs);
+  };
+
+  const handleRunCompleted = () => {
+    setInputDisabled(false);
+  };
+
+  const handleReadableStream = (stream: AssistantStream) => {
+    stream.on("textCreated", handleTextCreated);
+    stream.on("textDelta", handleTextDelta);
+    stream.on("imageFileDone", handleImageFileDone);
+    stream.on("toolCallCreated", toolCallCreated);
+    stream.on("toolCallDelta", toolCallDelta);
+
+    stream.on("event", (event) => {
+      if (event.event === "thread.run.requires_action")
+        handleRequiresAction(event);
+      if (event.event === "thread.run.completed") handleRunCompleted();
+    });
+  };
+
+  const appendToLastMessage = (text: string) => {
+    setMessages((prevMessages) => {
+      const lastMessage = prevMessages[prevMessages.length - 1];
+      const updatedLastMessage = {
+        ...lastMessage,
+        text: lastMessage.text + text,
+      };
+      return [...prevMessages.slice(0, -1), updatedLastMessage];
+    });
+  };
+
+  const appendMessage = (role: "user" | "assistant" | "code", text: string) => {
+    setMessages((prevMessages) => [...prevMessages, { role, text }]);
+  };
+
+  const annotateLastMessage = (annotations: any[]) => {
+    setMessages((prevMessages) => {
+      const lastMessage = prevMessages[prevMessages.length - 1];
+      let updatedText = lastMessage.text;
+
+      annotations.forEach((annotation) => {
+        if (annotation.type === "file_path") {
+          updatedText = updatedText.replaceAll(
+            annotation.text,
+            `/api/files/${annotation.file_path.file_id}`
+          );
+        }
+      });
+
+      const updatedLastMessage = { ...lastMessage, text: updatedText };
+      return [...prevMessages.slice(0, -1), updatedLastMessage];
+    });
+  };
+
+  return (
+    <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Drawer
+        variant={isMobile ? 'temporary' : 'persistent'}
+        open={drawerOpen}
+        onClose={toggleDrawer}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          width: drawerOpen ? { xs: 250, sm: 300 } : 0,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: { xs: 250, sm: 300 },
+            boxSizing: 'border-box',
+            top: 0,
+            height: '100%',
+          },
+        }}
+      >
+        <Sidebar toggleDrawer={toggleDrawer} />
+
+      </Drawer>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          overflow: 'hidden',
+        }}
+      >
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={toggleDrawer}
+            sx={{ mr: 2, ...(drawerOpen && { display: 'none' }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div">
+            AI Chat Assistant
+          </Typography>
+        </Box>
+        <MessageList messages={messages} isTyping={isTyping} />
+        <ChatInput handleSubmit={handleSubmit} inputDisabled={inputDisabled} userInput={userInput} setUserInput={setUserInput} inputRef={inputRef} />
+      </Box>
+    </Box>
+  );
 };
 
 export default Chat;

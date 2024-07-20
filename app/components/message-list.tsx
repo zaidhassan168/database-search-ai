@@ -34,7 +34,7 @@ type MessageListProps = {
 export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) => {
     const theme = useTheme();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
-
+    // console.log(messages);
     React.useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
