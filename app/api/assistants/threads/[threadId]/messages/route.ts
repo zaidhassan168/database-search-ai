@@ -27,7 +27,7 @@ export async function POST(request, { params: { threadId } }) {
     return new Response(stream.toReadableStream());
   } catch (error) {
     console.error('Error in POST handler:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+    return new Response(JSON.stringify({ error: 'Internal Server Error in route file' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
