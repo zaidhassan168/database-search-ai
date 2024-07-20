@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v13-appRouter';
 
 export const metadata = {
-  title: "Assistants API Quickstart",
+  title: "Database Search AI",
   description: "A quickstart template using the Assistants API with OpenAI",
   icons: {
     icon: "/openai.svg",

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // use 'next/navigation' in App Router
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Container,
@@ -11,6 +11,7 @@ import {
   CardContent,
   CardActions,
   Button,
+  Box,
   ThemeProvider, 
   createTheme 
 } from '@mui/material';
@@ -47,19 +48,14 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const Home = () => {
-  const { user } = useAuth();
+const ExamplesPage = () => {
+  const { user, logout } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/auth/login'); // Redirect to auth if not logged in
-    }
-  }, [user, router]);
-
-  if (!user) {
-    return <div>Loading...</div>; // Optionally display a loading indicator while redirecting
-  }
+  const handleLogout = async () => {
+    await logout();
+    router.push('/auth/login'); // Redirect to login page after logout
+  };
 
   const categories = {
     "Basic Chat": { url: "basic-chat" },
@@ -75,9 +71,14 @@ const Home = () => {
   return (
     <ThemeProvider theme={theme}>
       <StyledContainer maxWidth="md">
-        <Typography variant="h3" align="center" gutterBottom fontWeight="bold">
-          Explore Sample Apps Built with Assistants API
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Typography variant="h3" gutterBottom fontWeight="bold">
+            Explore Sample Apps Built with Assistants API
+          </Typography>
+          <Button variant="contained" color="secondary" onClick={handleLogout}>
+            Logout
+          </Button>
+        </Box>
         <Grid container spacing={4}>
           {Object.entries(categories).map(([name, { url }]) => (
             <Grid item key={name} xs={12} sm={6} md={4}>
@@ -104,4 +105,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default ExamplesPage;
