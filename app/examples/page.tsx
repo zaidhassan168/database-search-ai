@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -17,7 +18,9 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/system';
 import { useAuth } from '@/app/utils/AuthProvider';
-
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import {auth} from '@/firebaseConfig';
+import { sign } from 'crypto';
 // Custom Theme (Customize to your liking)
 const theme = createTheme({
   palette: {
@@ -49,11 +52,28 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const ExamplesPage = () => {
-  const { user, logout } = useAuth();
+  // const { user, logout } = useAuth();
   const router = useRouter();
 
+  // useEffect(() => {
+  //   const auth = getAuth();
+  //   const unsubscribe = onAuthStateChanged(auth, (user) => {
+  //     if (user) {
+  //       console.log('User', user);  
+  //       router.push('/examples');
+  //     } else {
+  //       console.log('User not logged in');
+  //       router.push('/auth/login');
+  //     }
+  //     // setLoading(false);
+  //   });
+
+  //   return () => unsubscribe();
+  // }, [router, user]);
+
   const handleLogout = async () => {
-    await logout();
+    console.log("Logging" ,auth);
+    await signOut(auth);
     router.push('/auth/login'); // Redirect to login page after logout
   };
 
