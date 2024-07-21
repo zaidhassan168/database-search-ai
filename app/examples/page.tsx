@@ -55,21 +55,16 @@ const ExamplesPage = () => {
   // const { user, logout } = useAuth();
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const auth = getAuth();
-  //   const unsubscribe = onAuthStateChanged(auth, (user) => {
-  //     if (user) {
-  //       console.log('User', user);  
-  //       router.push('/examples');
-  //     } else {
-  //       console.log('User not logged in');
-  //       router.push('/auth/login');
-  //     }
-  //     // setLoading(false);
-  //   });
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) { // Check if user is NOT logged in
+        router.push('/auth/login'); // Redirect immediately
+      }
+    });
 
-  //   return () => unsubscribe();
-  // }, [router, user]);
+    return () => unsubscribe(); // Cleanup the listener
+  }, [router]);
 
   const handleLogout = async () => {
     console.log("Logging" ,auth);
