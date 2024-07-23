@@ -4,6 +4,8 @@ import React from 'react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { withAuth } from '@/app/utils/withAuth';
+
 import { 
   Container,
   Typography,
@@ -120,4 +122,4 @@ const ExamplesPage = () => {
   );
 };
 
-export default ExamplesPage;
+export default withAuth(ExamplesPage);

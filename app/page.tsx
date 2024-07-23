@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Container,
@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/system';
 import { useAuth } from '@/app/utils/AuthProvider';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 // Custom Theme (Customize to your liking)
 const theme = createTheme({
@@ -34,39 +33,26 @@ const StyledContainer = styled(Container)(({ theme }) => ({
 }));
 
 const Home = () => {
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { user } = useAuth();
 
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log('User', user);  
-        router.push('/examples');
-      } else {
-        console.log('User not logged in helllooo');
-        router.push('/auth/login');
-      }
-      setLoading(false);
-    });
+  React.useEffect(() => {
+    if (user) {
+      router.push('/examples');
+    } else {
+      router.push('/auth/login');
+    }
+  }, [user, router]);
 
-    return () => unsubscribe();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <StyledContainer maxWidth="md">
-          <Typography variant="h5" align="center">
-            Loading...
-          </Typography>
-        </StyledContainer>
-      </ThemeProvider>
-    );
-  }
-
-  return null; // The component doesn't render anything as it always redirects
+  return (
+    <ThemeProvider theme={theme}>
+      <StyledContainer maxWidth="md">
+        <Typography variant="h5" align="center">
+          Loading...
+        </Typography>
+      </StyledContainer>
+    </ThemeProvider>
+  );
 };
 
 export default Home;

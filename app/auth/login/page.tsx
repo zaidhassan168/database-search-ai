@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/./firebaseConfig';
+import { withoutAuth } from '@/app/utils/withoutAuth';
+
 import {
   Container,
   Typography,
@@ -115,4 +117,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default withoutAuth(LoginPage);

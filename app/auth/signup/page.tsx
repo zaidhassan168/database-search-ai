@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/./firebaseConfig';
 import { Container, Typography, TextField, Button, Box, Link } from '@mui/material';
+import { withoutAuth } from '@/app/utils/withoutAuth';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -85,4 +86,5 @@ const SignupPage = () => {
   );
 };
 
-export default SignupPage;
+export default withoutAuth(SignupPage);
+
