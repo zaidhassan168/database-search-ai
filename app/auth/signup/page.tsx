@@ -32,12 +32,40 @@ const SignupPage = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box my={4}>
-        <Typography variant="h4" component="h1" gutterBottom>
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        backgroundImage: 'url(/bg.jpg)', // Update this path to your image
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        paddingLeft: '50%', // Adjust padding to position the container
+      }}
+    >
+      <Container
+        component="main"
+        maxWidth="xs"
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: 4,
+          backgroundColor: 'rgba(255, 255, 255, 0.8)', // Adding transparency
+          borderRadius: 2,
+          boxShadow: 3,
+          width: '100%',
+        }}
+      >
+        <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold' }}>
           Sign Up
         </Typography>
-        <form onSubmit={handleSignup}>
+        <Box
+          component="form"
+          onSubmit={handleSignup}
+          sx={{ width: '100%', mt: 2 }}
+        >
           <TextField
             label="Email"
             type="email"
@@ -71,20 +99,24 @@ const SignupPage = () => {
             </Typography>
           )}
           <Box mt={2}>
-            <Button type="submit" variant="contained" color="primary" fullWidth>
+            <Button type="submit" variant="contained" fullWidth
+              sx={{
+                backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: '#fff',
+              }}
+            >
               Sign Up
             </Button>
           </Box>
-        </form>
+        </Box>
         <Box mt={2}>
           <Typography variant="body2">
             Already have an account? <Link href="/auth/login">Login</Link>
           </Typography>
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
 export default withoutAuth(SignupPage);
-

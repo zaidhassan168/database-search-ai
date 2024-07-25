@@ -5,37 +5,30 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/./firebaseConfig';
-import { withoutAuth } from '@/app/utils/withoutAuth';
-
-import {
-  Container,
-  Typography,
-  TextField,
-  Button,
-  Box,
-  Link,
-  Avatar,
-  IconButton,
-} from '@mui/material';
+import { Container, Typography, TextField, Button, Box, Link, Avatar, IconButton, CircularProgress } from '@mui/material';
 import { Facebook, Twitter, Google, LockOutlined } from '@mui/icons-material';
+import { withoutAuth } from '@/app/utils/withoutAuth';
 
 // Define the LoginPage component
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   // Handle login functionality
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/examples'); // Redirect to examples after login
     } catch (err) {
       setError('Invalid credentials');
+      setLoading(false);
     }
   };
 
@@ -49,7 +42,7 @@ const LoginPage = () => {
         backgroundImage: 'url(/bg.jpg)', // Update this path to your image
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        paddingLeft: '50%',
+        paddingLeft: '50%', // Adjust padding to position the container
       }}
     >
       <Container
@@ -86,13 +79,6 @@ const LoginPage = () => {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <Avatar sx={{ width: 24, height: 24, mr: 1 }}>
-                  <LockOutlined />
-                </Avatar>
-              ),
-            }}
           />
           <TextField
             variant="outlined"
@@ -106,13 +92,6 @@ const LoginPage = () => {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <Avatar sx={{ width: 24, height: 24, mr: 1 }}>
-                  <LockOutlined />
-                </Avatar>
-              ),
-            }}
           />
           {error && (
             <Typography color="error" variant="body2">
@@ -122,19 +101,23 @@ const LoginPage = () => {
           <Link href="#" variant="body2" sx={{ display: 'block', mt: 1 }}>
             Forgot password?
           </Link>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{
-              mt: 3,
-              mb: 2,
-              backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: '#fff',
-            }}
-          >
-            LOGIN
-          </Button>
+          <Box sx={{ mt: 3, mb: 2 }}>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{
+                backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={29} sx={{ color: '#fff' }} /> : 'LOGIN'}
+            </Button>
+          </Box>
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
             Or Sign Up Using
           </Typography>
