@@ -1,11 +1,10 @@
-'use client';
-
 // Import necessary components and styles
+'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/./firebaseConfig';
-import { Container, Typography, TextField, Button, Box, Link, Avatar, IconButton, CircularProgress } from '@mui/material';
+import { Container, Typography, TextField, Button, Box, Link, Avatar, IconButton, CircularProgress, Checkbox, FormControlLabel } from '@mui/material';
 import { Facebook, Twitter, Google, LockOutlined } from '@mui/icons-material';
 import { withoutAuth } from '@/app/utils/withoutAuth';
 
@@ -13,6 +12,7 @@ import { withoutAuth } from '@/app/utils/withoutAuth';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -27,7 +27,7 @@ const LoginPage = () => {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/examples'); // Redirect to examples after login
     } catch (err) {
-      setError('Invalid credentials');
+      setError('Invalid email or password');
       setLoading(false);
     }
   };
@@ -59,6 +59,9 @@ const LoginPage = () => {
           width: '100%',
         }}
       >
+        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+          <LockOutlined />
+        </Avatar>
         <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold' }}>
           Login
         </Typography>
@@ -73,9 +76,9 @@ const LoginPage = () => {
             required
             fullWidth
             id="email"
-            label="Username"
+            label="Email Address"
             name="email"
-            autoComplete="username"
+            autoComplete="email"
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -93,6 +96,10 @@ const LoginPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <FormControlLabel
+            control={<Checkbox value="remember" color="primary" checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />}
+            label="Remember me"
+          />
           {error && (
             <Typography color="error" variant="body2">
               {error}
@@ -107,33 +114,33 @@ const LoginPage = () => {
               fullWidth
               variant="contained"
               sx={{
-                backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: '#fff',
+                backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                color: '#000',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={29} sx={{ color: '#fff' }} /> : 'LOGIN'}
+              {loading ? <CircularProgress size={29} sx={{ color: '#000' }} /> : 'LOGIN'}
             </Button>
           </Box>
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
             Or Sign Up Using
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-            <IconButton color="primary">
-              <Facebook />
+            <IconButton color="primary" disabled={loading}>
+               <Facebook />
             </IconButton>
-            <IconButton color="primary">
-              <Twitter />
+            <IconButton color="primary" disabled={loading}>
+             <Twitter />
             </IconButton>
-            <IconButton color="primary">
-              <Google />
+            <IconButton color="primary" disabled={loading}>
+               <Google />
             </IconButton>
           </Box>
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-            Or Sign Up Using
+            Don't have an account?
           </Typography>
           <Link href="/auth/signup" variant="body2" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
             SIGN UP
