@@ -1,31 +1,57 @@
-"use client";
+'use client';
 
-import React from "react";
-import styles from "./page.module.css";
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  Container,
+  Typography,
+  ThemeProvider, 
+  createTheme 
+} from '@mui/material';
+import { styled } from '@mui/system';
+import { useAuth } from '@/app/utils/AuthProvider';
+
+// Custom Theme (Customize to your liking)
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#f50057',
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, Arial, sans-serif',
+  },
+});
+
+// Styled Components
+const StyledContainer = styled(Container)(({ theme }) => ({
+  paddingTop: theme.spacing(12),
+  paddingBottom: theme.spacing(12),
+}));
 
 const Home = () => {
-  const categories = {
-    "Basic chat": "basic-chat",
-    "Function calling": "function-calling",
-    "File search": "file-search",
-    All: "all",
-    "Database search": "database-search",
-    "python-function": "python-function",
-  };
+  const router = useRouter();
+  const { user } = useAuth();
+
+  React.useEffect(() => {
+    if (user) {
+      router.push('/examples');
+    } else {
+      router.push('/auth/login');
+    }
+  }, [user, router]);
 
   return (
-    <main className={styles.main}>
-      <div className={styles.title}>
-        Explore sample apps built with Assistants API
-      </div>
-      <div className={styles.container}>
-        {Object.entries(categories).map(([name, url]) => (
-          <a key={name} className={styles.category} href={`/examples/${url}`}>
-            {name}
-          </a>
-        ))}
-      </div>
-    </main>
+    <ThemeProvider theme={theme}>
+      <StyledContainer maxWidth="md">
+        <Typography variant="h5" align="center">
+          Loading...
+        </Typography>
+      </StyledContainer>
+    </ThemeProvider>
   );
 };
 

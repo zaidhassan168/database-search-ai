@@ -1,0 +1,25 @@
+{
+    "builds": [
+        {
+            "src": "package.json",
+            "use": "@vercel/next"
+        },
+        {
+            "src": "requirements.txt",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/create_mind",
+            "methods": [
+                "POST"
+            ],
+            "dest": "/api/create_mind"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/$1"
+        }
+    ]
+}

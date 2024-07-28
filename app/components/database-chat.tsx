@@ -1,122 +1,50 @@
-"use client";
-import OpenAI from "openai";
 import React, { useState, useEffect, useRef } from "react";
-import styles from "./chat.module.css";
-import { AssistantStream } from "openai/lib/AssistantStream";
-import Markdown from "react-markdown";
-// @ts-expect-error - no types for this yet
-import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
-import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import {
-  Box,
-  Button,
   TextField,
   CircularProgress,
-  Typography,
   Paper,
-  Snackbar,
-  Alert,
+  Typography,
+  IconButton,
+  Box,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
-type MessageProps = {
-  role: "user" | "assistant" | "code";
-  text: string;
-};
+import SendIcon from '@mui/icons-material/Send';
+import StorageIcon from '@mui/icons-material/Storage';
+import Markdown from "react-markdown";
 
-const UserMessage = ({ text }: { text: string }) => {
-  return <div className={styles.userMessage}>{text}</div>;
-};
-
-const AssistantMessage = ({ text }: { text: string }) => {
-  return (
-    <div className={styles.assistantMessage}>
-      <Markdown>{text}</Markdown>
-    </div>
-  );
-};
-
-const CodeMessage = ({ text }: { text: string }) => {
-  return (
-    <div className={styles.codeMessage}>
-      {text.split("\n").map((line, index) => (
-        <div key={index}>
-          <span>{`${index + 1}. `}</span>
-          {line}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const Message = ({ role, text }: MessageProps) => {
-  switch (role) {
-    case "user":
-      return <UserMessage text={text} />;
-    case "assistant":
-      return <AssistantMessage text={text} />;
-    case "code":
-      return <CodeMessage text={text} />;
-    default:
-      return null;
-  }
-};
-
-type ChatProps = {
-  functionCallHandler?: (
-    toolCall: RequiredActionFunctionToolCall
-  ) => Promise<string>;
-};
-
-interface ApiResponse {
-  // Define the expected structure of the API response
-  // Adjust these fields according to the actual response format
-  message: string;
-  [key: string]: any;
-}
-const DatabaseChat = ({
-  functionCallHandler = () => Promise.resolve(""), // default to return empty string
-}: ChatProps) => {
+const DatabaseChat = () => {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
-  const [inputDisabled, setInputDisabled] = useState(false);
-  const [threadId, setThreadId] = useState("");
-  const [response, setResponse] = useState<ApiResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [agentName, setAgentName] = useState("");
-  const openai = new OpenAI({
-    apiKey: "dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b",
-    dangerouslyAllowBrowser: true,
-    baseURL: "https://llm.mdb.ai",
-  });
-  // automatically scroll to bottom of chat
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const messagesEndRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // create a new threadID when chat component created
-  const setAssistantName = (agentName: string) => {
-    setAgentName(agentName);
-    console.log("agentName: ", agentName);
-  }
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text) => {
+    setIsLoading(true);
+    const newUserMessage = { role: "user", content: text };
+    setMessages(prevMessages => [...prevMessages, newUserMessage]);
+
     const requestData = {
       model: agentName || "gpt-3.5-turbo",
       messages: [
         {
           role: 'system',
-          content: 'analyse the data',
+          content: 'You are a helpful assistant. Analyze the data and maintain conversation context.',
         },
-        {
-          role: 'user',
-          content: text,
-        },
+        ...messages,
+        newUserMessage,
       ],
     };
 
     try {
+      console.log(requestData);
       const response = await fetch('/api/proxy', {
         method: 'POST',
         headers: {
@@ -124,196 +52,159 @@ const DatabaseChat = ({
         },
         body: JSON.stringify(requestData),
       });
-
+      console.log(response);
       if (!response.ok) {
         throw new Error(`Error fetching data: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log(data);
-      const message = data.choices[0].message.content;
-      // Process the data as needed
-      // const message = data.message
-      appendMessage("assistant", message);
+      const assistantMessage = { role: "assistant", content: data.choices[0].message.content };
+      setMessages(prevMessages => [...prevMessages, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+      setMessages(prevMessages => [...prevMessages, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
     } finally {
-      setInputDisabled(false);
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || isLoading) return;
     sendMessage(userInput);
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: "user", text: userInput },
-    ]);
     setUserInput("");
-    setInputDisabled(true);
-    scrollToBottom();
   };
 
-  /* Stream Event Handlers */
 
-  // textCreated - create new assistant message
-  const handleTextCreated = () => {
-    appendMessage("assistant", "");
-  };
-
-  // textDelta - append text to last assistant message
-  const handleTextDelta = (delta) => {
-    if (delta.value != null) {
-      appendToLastMessage(delta.value);
-    };
-    if (delta.annotations != null) {
-      annotateLastMessage(delta.annotations);
-    }
-  };
-
-  // imageFileDone - show image in chat
-  const handleImageFileDone = (image) => {
-    appendToLastMessage(`\n![${image.file_id}](/api/files/${image.file_id})\n`);
-  }
-
-  // toolCallCreated - log new tool call
-  const toolCallCreated = (toolCall) => {
-    if (toolCall.type != "code_interpreter") return;
-    appendMessage("code", "");
-  };
-
-  // toolCallDelta - log delta and snapshot for the tool call
-  const toolCallDelta = (delta, snapshot) => {
-    if (delta.type != "code_interpreter") return;
-    if (!delta.code_interpreter.input) return;
-    appendToLastMessage(delta.code_interpreter.input);
-  };
-
-  // handleRequiresAction - handle function call
-  const handleRequiresAction = async (
-    event: AssistantStreamEvent.ThreadRunRequiresAction
-  ) => {
-    const runId = event.data.id;
-    const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
-    // loop over tool calls and call function handler
-    const toolCallOutputs = await Promise.all(
-      toolCalls.map(async (toolCall) => {
-        const result = await functionCallHandler(toolCall);
-        return { output: result, tool_call_id: toolCall.id };
-      })
+  const Message = ({ role, content }) => {
+    const isUser = role === "user";
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: isUser ? 'flex-end' : 'flex-start',
+          mb: 2,
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 2,
+            maxWidth: '70%',
+            backgroundColor: isUser ? '#e3f2fd' : '#f5f5f5',
+            borderRadius: isUser ? '20px 20px 0 20px' : '20px 20px 20px 0',
+          }}
+        >
+          <Typography variant="body1">
+            {role === "assistant" ? (
+              <Markdown>{content}</Markdown>
+            ) : (
+              content
+            )}
+          </Typography>
+        </Paper>
+      </Box>
     );
-    setInputDisabled(true);
   };
 
-  // handleRunCompleted - re-enable the input form
-  const handleRunCompleted = () => {
-    setInputDisabled(false);
-  };
-
-  const handleReadableStream = (stream: AssistantStream) => {
-    // messages
-    stream.on("textCreated", handleTextCreated);
-    stream.on("textDelta", handleTextDelta);
-
-    // image
-    stream.on("imageFileDone", handleImageFileDone);
-
-    // code interpreter
-    stream.on("toolCallCreated", toolCallCreated);
-    stream.on("toolCallDelta", toolCallDelta);
-
-    // events without helpers yet (e.g. requires_action and run.done)
-    stream.on("event", (event) => {
-      if (event.event === "thread.run.requires_action")
-        handleRequiresAction(event);
-      if (event.event === "thread.run.completed") handleRunCompleted();
-    });
-  };
-
-  /*
-    =======================
-    === Utility Helpers ===
-    =======================
-  */
-
-  const appendToLastMessage = (text) => {
-    setMessages((prevMessages) => {
-      const lastMessage = prevMessages[prevMessages.length - 1];
-      const updatedLastMessage = {
-        ...lastMessage,
-        text: lastMessage.text + text,
-      };
-      return [...prevMessages.slice(0, -1), updatedLastMessage];
-    });
-  };
-
-  const appendMessage = (role, text) => {
-    setMessages((prevMessages) => [...prevMessages, { role, text }]);
-  };
-
-  const annotateLastMessage = (annotations) => {
-    setMessages((prevMessages) => {
-      const lastMessage = prevMessages[prevMessages.length - 1];
-      const updatedLastMessage = {
-        ...lastMessage,
-      };
-      annotations.forEach((annotation) => {
-        if (annotation.type === 'file_path') {
-          updatedLastMessage.text = updatedLastMessage.text.replaceAll(
-            annotation.text,
-            `/api/files/${annotation.file_path.file_id}`
-          );
-        }
-      })
-      return [...prevMessages.slice(0, -1), updatedLastMessage];
-    });
-
-  }
 
   return (
-    <div className={styles.chatContainer}>
+    <Paper 
+      elevation={3}
+      sx={{
+        width: '100%',
+        maxWidth: isMobile ? '100%' : '800px',
+        height: 'calc(100vh - 32px)', // Adjust for some padding
+        mx: 'auto',
+        mt: 2,
+        mb: 2,
+        p: 3,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 2,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <StorageIcon sx={{ fontSize: 40, mr: 2, color: '#1976d2' }} />
+        <Typography variant="h4" component="h1">
+          Database Chat
+        </Typography>
+      </Box>
+
       <TextField
         label="Agent Name"
         variant="outlined"
         fullWidth
         margin="normal"
-        onChange={(e) =>
-          setAssistantName(e.target.value)
-        }
-        sx={{ marginBottom: 2 }}
+        onChange={(e) => setAgentName(e.target.value)}
+        sx={{ mb: 2 }}
       />
-      <div className={styles.messages}>
+
+      <Paper 
+        elevation={1}
+        sx={{
+          flexGrow: 1,
+          overflowY: 'auto',
+          p: 2,
+          mb: 2,
+          backgroundColor: '#ffffff',
+        }}
+      >
         {messages.map((msg, index) => (
-          <Message key={index} role={msg.role} text={msg.text} />
+          <Message key={index} role={msg.role} content={msg.content} />
         ))}
         <div ref={messagesEndRef} />
-      </div>
-      <form
-        onSubmit={handleSubmit}
-        className={`${styles.inputForm} ${styles.clearfix}`}
-      >
-        <input
-          type="text"
-          className={styles.input}
+      </Paper>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Enter your question"
+          disabled={isLoading}
+          sx={{ 
+            mr: 1,
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: 'black',
+              },
+              '&:hover fieldset': {
+                borderColor: 'black',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'black',
+              },
+            },
+            '& .MuiInputBase-input': {
+              color: 'black',
+            },
+          }}
         />
-        <button
+        <IconButton 
           type="submit"
-          className={styles.button}
-          disabled={inputDisabled}
+          disabled={isLoading}
+          sx={{ 
+            p: '10px',
+            backgroundColor: '#1976d2',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#1565c0',
+            },
+          }}
         >
-          {inputDisabled ? (
-            <CircularProgress size={24} />
+          {isLoading ? (
+            <CircularProgress size={24} color="inherit" />
           ) : (
-            <span>Ask</span>
+            <SendIcon />
           )}
-        </button>
+        </IconButton>
       </form>
-    </div>
+    </Paper>
   );
 };
+
 
 export default DatabaseChat;
