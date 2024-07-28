@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify(requestData),
     });
-
+    console.log(response);
     if (!response.ok) {
       throw new Error(`Error fetching data: ${response.statusText}`);
     }

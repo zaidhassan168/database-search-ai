@@ -16,12 +16,15 @@ const ConnectDatabase = () => {
 
   const [settings, setSettings] = useState({
     name: "",
-    model: "gpt-4",
-    data_source_type: "postgres",
-    data_source_connection_args: {
-      url: "",
-    },
-    description: "",
+    data_source_configs: [
+      {
+        type: "postgres",
+        connection_args: {
+          url: ""
+        }, 
+        description: "example description",
+      },
+    ],
   });
 
   const parsePostgresUrl = (url) => {
@@ -40,7 +43,7 @@ const ConnectDatabase = () => {
     setFlashMessage(null);
 
     // Check if required fields are filled
-    if (!settings.name || !settings.model || !settings.data_source_connection_args.url) {
+    if (!settings.name || !settings.data_source_configs[0].connection_args.url) {
       setFlashMessage({ type: 'error', message: 'Please fill in all required fields.' });
       setIsLoading(false);
       return;
@@ -48,30 +51,41 @@ const ConnectDatabase = () => {
 
     try {
       const { user, password, host, port, database } = parsePostgresUrl(
-        settings.data_source_connection_args.url
+        settings.data_source_configs[0].connection_args.url
       );
 
       const headers = {
         "Content-Type": "application/json",
         Authorization:
-          "Bearer dffec46170bdcfaff7919631f3ebd99edeadd7c0f25c4a50f12a4d5d2407fc2b", // Replace with your actual API key
+          "Bearer 49f39e2230166b597fe6cb498756e425f5f15d82a23bd7b3530a4ec2824351d2", // Replace with your actual API key
       };
-
+      //make the body here 
+      console.log(settings);
+      
+      const request_body = {
+        ...settings,
+         data_source_configs: [
+           {
+            ...settings.data_source_configs[0],
+             connection_args: {
+               user: user,
+               password: password,
+               host: host,
+               port: port,
+               database: database,
+               schema: "public"
+             },
+             description: settings.data_source_configs[0].description,
+           },
+         ],
+       };
+       console.log(JSON.stringify(request_body));
       const response = await fetch("https://llm.mdb.ai/minds", {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({
-          ...settings,
-          data_source_connection_args: {
-            user,
-            password,
-            host,
-            port,
-            database,
-          },
-        }),
+        body: JSON.stringify(request_body),
       });
-
+      console.log(JSON.stringify(response));
       if (response.ok) {
         const data = await response.json();
         setFlashMessage({ type: 'success', message: `Success: ${JSON.stringify(data)}` });
@@ -124,7 +138,7 @@ const ConnectDatabase = () => {
             onChange={(e) => setSettings({ ...settings, name: e.target.value })}
             sx={{ marginBottom: 2 }}
           />
-          <TextField
+          {/* <TextField
             label="Model to be used"
             variant="outlined"
             fullWidth
@@ -132,17 +146,7 @@ const ConnectDatabase = () => {
             required
             onChange={(e) => setSettings({ ...settings, model: e.target.value })}
             sx={{ marginBottom: 2 }}
-          />
-          <TextField
-            label="Data Source Type i.e. postgres"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            onChange={(e) =>
-              setSettings({ ...settings, data_source_type: e.target.value })
-            }
-            sx={{ marginBottom: 2 }}
-          />
+          /> */}
           <TextField
             label="PostgreSQL URL"
             variant="outlined"
@@ -152,9 +156,15 @@ const ConnectDatabase = () => {
             onChange={(e) =>
               setSettings({
                 ...settings,
-                data_source_connection_args: {
-                  url: e.target.value,
-                },
+                data_source_configs: [
+                  {
+                    ...settings.data_source_configs[0],
+                    connection_args: {
+                      ...settings.data_source_configs[0].connection_args,
+                      url: e.target.value,
+                    },
+                  },
+                ],
               })
             }
             sx={{ marginBottom: 2 }}
@@ -165,7 +175,15 @@ const ConnectDatabase = () => {
             fullWidth
             margin="normal"
             onChange={(e) =>
-              setSettings({ ...settings, description: e.target.value })
+              setSettings({
+                ...settings,
+                data_source_configs: [
+                  {
+                    ...settings.data_source_configs[0],
+                    description: e.target.value,
+                  },
+                ],
+              })
             }
             sx={{ marginBottom: 2 }}
           />

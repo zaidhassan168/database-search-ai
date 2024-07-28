@@ -4,7 +4,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method, body } = req;
-
+  console.log(JSON.stringify(req));
   if (method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${method} Not Allowed`);
@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const apiUrl = 'https://llm.mdb.ai/chat/completions'; // The third-party API URL
-
+  console.log(body);
   const requestOptions: RequestInit = {
     method,
     headers: {
@@ -23,7 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
+    console.log(requestOptions);
     const response = await fetch(apiUrl, requestOptions);
+    console.log(response);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {
